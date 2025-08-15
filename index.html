@@ -1,20 +1,87 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Telegram Init Data Test</title>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
+  />
+  <title>Telegram + TON Wallet Test</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; padding: 16px; line-height: 1.4; }
+    .row { margin: 12px 0; }
+    button { padding: 10px 14px; border: 0; border-radius: 10px; cursor: pointer; }
+    #connect { background: #4f7cff; color: white; }
+    #openWallet { background: #14a2ff; color: white; }
+    pre { background: #f5f7fb; padding: 12px; border-radius: 8px; overflow: auto; }
+    small { color: #666; }
+  </style>
 </head>
 <body>
-  <h1>Telegram Init Data Test</h1>
-  <pre id="output"></pre>
+  <h1>Telegram InitData & TON Wallet Test</h1>
 
+  <div class="row">
+    <button id="openWallet">Open Telegram Wallet</button>
+    <button id="connect">Connect via TonConnect (stub)</button>
+  </div>
+
+  <div class="row">
+    <small>Init data as seen by this page:</small>
+    <pre id="output">Waiting for Telegram WebApp…</pre>
+  </div>
+
+  <!-- Telegram WebApp JS (injects initData / API like openTelegramLink) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
 
-    // Get init data
-    const initData = tg.initDataUnsafe;
-    document.getElementById('output').textContent = JSON.stringify(initData, null, 2);
+  <!-- OPTIONAL TonConnect SDK via CDN (only needed when you implement real connect) -->
+  <!-- <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect.umd.min.js"></script> -->
+
+  <script>
+    // Make sure we're inside Telegram WebApp
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+
+    if (tg) {
+      tg.ready();
+
+      // Show initData
+      const initDataUnsafe = tg.initDataUnsafe || {};
+      document.getElementById('output').textContent =
+        JSON.stringify(initDataUnsafe, null, 2);
+
+      // Button: open the built-in Telegram Wallet UI (simple deep link).
+      // This doesn’t "connect" programmatically; it just opens the wallet.
+      // Great for a quick smoke test that your button can reach the wallet.
+      document.getElementById('openWallet').addEventListener('click', () => {
+        // Use Telegram’s API so it opens inside the app nicely.
+        tg.openTelegramLink('https://t.me/wallet?startattach=wallet');
+      });
+
+      // Button: TonConnect "stub". Replace with real TonConnect flow when ready.
+      document.getElementById('connect').addEventListener('click', async () => {
+        // NOTE:
+        // Real TonConnect requires hosting a manifest.json (name, icon, url).
+        // Without a manifest, calling TonConnect.connect() will not complete.
+        // For now, we just show a toast so you know the stub is wired.
+        tg.showPopup({
+          title: 'TonConnect Setup Required',
+          message:
+            'To actually connect, add TonConnect SDK + manifest.json and call tonConnect.connect(). For now this is just a stub.',
+          buttons: [{ type: 'ok' }],
+        });
+      });
+
+    } else {
+      // If you opened this outside Telegram, we can still show a message.
+      document.getElementById('output').textContent =
+        'Not running inside Telegram WebApp. Open via your bot’s Web App button.';
+      // Fallback for wallet open (will open in a new tab if not in Telegram)
+      document.getElementById('openWallet').addEventListener('click', () => {
+        window.open('https://t.me/wallet?startattach=wallet', '_blank');
+      });
+      document.getElementById('connect').addEventListener('click', () => {
+        alert('TonConnect requires Telegram WebApp + a hosted manifest.json.');
+      });
+    }
   </script>
 </body>
 </html>
